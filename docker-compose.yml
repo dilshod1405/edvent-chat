@@ -1,0 +1,37 @@
+version: '3'
+services:
+  chat:
+    build: .
+    container_name: chat
+    image: chat
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    environment:
+    - MONGo_URI=${MONGO_URI}
+    depends_on:
+      - mongo
+    networks:
+      - archedu-net
+      - common-net
+
+  mongo:
+    image: mongo
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - archedu-net
+      - common-net
+
+volumes:
+  mongo-data:
+
+networks:
+  archedu-net:
+    driver: bridge
+  common-net:
+    external: true
