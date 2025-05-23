@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Edvent Chat - Real-time Messaging</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background-color: #0e1117;
+      color: #f5f5f5;
+      line-height: 1.6;
+    }
+
+    header {
+      padding: 2rem;
+      text-align: center;
+      background: linear-gradient(90deg, #1f1f1f, #2c2c2c);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+      color: #00ffd5;
+    }
+
+    header p {
+      color: #bbb;
+    }
+
+    .section {
+      padding: 3rem 2rem;
+      max-width: 900px;
+      margin: auto;
+      animation: fadeIn 1s ease-in;
+    }
+
+    .features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+
+    .feature {
+      background-color: #1e1e1e;
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      transition: transform 0.2s;
+    }
+
+    .feature:hover {
+      transform: translateY(-5px);
+    }
+
+    .gif {
+      text-align: center;
+      margin-top: 3rem;
+    }
+
+    .gif img {
+      max-width: 100%;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 255, 213, 0.2);
+    }
+
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      color: #888;
+      font-size: 0.9rem;
+    }
+
+    a.button {
+      display: inline-block;
+      margin-top: 1.5rem;
+      background-color: #00ffd5;
+      color: #000;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: background-color 0.3s;
+    }
+
+    a.button:hover {
+      background-color: #00c3a5;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media(max-width: 768px) {
+      .features {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Edvent Chat</h1>
+    <p>Real-time Chat Service built with Node.js, Socket.IO & MongoDB</p>
+    <a class="button" href="https://github.com/dilshod1405/edvent_chat" target="_blank">View on GitHub</a>
+  </header>
+
+  <section class="section">
+    <h2>🚀 Key Features</h2>
+    <div class="features">
+      <div class="feature">
+        <h3>⚡ Real-time Messaging</h3>
+        <p>Built using WebSocket via Socket.IO for fast and real-time communication.</p>
+      </div>
+      <div class="feature">
+        <h3>🔒 JWT Authentication</h3>
+        <p>Secure user sessions over WebSocket with JSON Web Tokens.</p>
+      </div>
+      <div class="feature">
+        <h3>🧠 Smart Routing</h3>
+        <p>Automatically connects students to support teachers by fetching routing data from the Django API.</p>
+      </div>
+      <div class="feature">
+        <h3>📦 Dockerized</h3>
+        <p>Full Docker and Compose support for easy development and deployment.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="gif">
+    <h2>🎬 Demo Preview</h2>
+    <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNzdhNGFlYTg5Zjk3M2QxZmRmMWI0YzRlY2M0ODk2ODJhNWE3NzI4OCZjdD1n/G96ZnBR8dW9XirEs4A/giphy.gif" alt="Chat Demo" />
+  </section>
+
+  <footer>
+    © 2025 Edvent. Built with ❤️ by Dilshod | <a href="https://github.com/dilshod1405/edvent-service" target="_blank" style="color:#00ffd5;">edvent-service</a>
+  </footer>
+</body>
+
+</html>
