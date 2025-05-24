@@ -1,9 +1,8 @@
-
 # Edvent Chat - Real-time Chat Service with Node.js & Socket.IO
 
-[![Node.js](https://img.shields.io/badge/Node.js-18.x-green)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-22.13-4F39F6)](https://nodejs.org/)
 [![Docker](https://img.shields.io/badge/Docker-Compose-blue)](https://www.docker.com/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-4.x-green)](https://www.mongodb.com/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-8.0-4F39F6)](https://www.mongodb.com/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ---
@@ -43,7 +42,7 @@ It is tightly integrated with the [Edvent Service](https://github.com/dilshod140
 1. Clone the repository:
 
     ```bash
-    git clone https://github.com/username/edvent_chat.git
+    git clone https://github.com/dilshod1405/edvent-chat.git
     cd edvent_chat
     ```
 
@@ -97,16 +96,58 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-COPY package.json yarn.lock ./
+COPY package.json package-lock.json ./
 
-RUN yarn install --frozen-lockfile
+RUN npm ci --omit=dev
 
 COPY . .
 
 EXPOSE 5000
 
-CMD ["yarn", "start"]
+CMD ["npm", "start"]
 ```
+
+---
+
+## 📡 Socket.IO Events
+
+### 🔑 Authentication Middleware
+
+Each connection must include a valid JWT in the handshake query:
+
+```js
+const socket = io('http://localhost:5000', {
+  auth: { token: 'YOUR_JWT_TOKEN' }
+});
+```
+
+### 📤 `send_message`
+
+Send a message to a support teacher.
+
+**Client emits:**
+
+```json
+{
+  "content": "Hello, I need help!"
+}
+```
+
+**Server responds (to sender and receiver):**
+
+```json
+{
+  "content": "Hello, I need help!",
+  "senderId": "USER_ID",
+  "receiverId": "SUPPORT_ID",
+  "timestamp": "2025-05-24T12:00:00.000Z",
+  "lessonId": "LESSON_ID"
+}
+```
+
+### 📥 `new_message`
+
+This event is emitted by the server when a new message is sent or received.
 
 ---
 
