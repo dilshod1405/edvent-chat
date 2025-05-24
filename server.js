@@ -16,7 +16,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: ["https://edvent.uz", "http://www.edvent.uz", "https://archedu.uz"],
+    origin: ["http://localhost:3000", "https://edvent.uz", "http://www.edvent.uz", "https://archedu.uz"],
     methods: ["GET", "POST"]
   }
 });
