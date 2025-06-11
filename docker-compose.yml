@@ -35,11 +35,10 @@ services:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
       - /etc/letsencrypt:/etc/letsencrypt
     ports:
-      - "80:80"
-      - "443:443"
+      - "8800:80"
+      - "8443:443"
     depends_on:
       - chat
-      - archedu
     networks:
       - archedu-net
       - common-net
