@@ -92,6 +92,7 @@ io.on('connection', (socket) => {
         });
 
         await newMessage.save();
+        
 
         const messagePayload = {
           content: newMessage.content,
@@ -105,6 +106,7 @@ io.on('connection', (socket) => {
         const privateRoom = `chat_${Math.min(userId, supportId)}_${Math.max(userId, supportId)}`;
 
         io.to(privateRoom).emit('new_message', messagePayload);
+        console.log(`✅ User ${userId} sent message to room ${privateRoom}:`, content);
       } catch (err) {
         console.error('❌ Message save error:', err.response?.data || err.message || err);
       }
