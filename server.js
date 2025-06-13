@@ -1,12 +1,12 @@
 import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
-import dotenv from 'dotenv';
 import cors from 'cors';
+import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import authenticate from './middleware/auth.js';
 import Message from './models/Message.js';
-import routes from './routes/index.js';
+import chatRoutes from './routes/chat.js';
 import axios from 'axios';
 
 dotenv.config();
@@ -29,98 +29,74 @@ const io = new Server(server, {
 
 app.use(cors());
 app.use(express.json());
-app.use('/', routes);
+app.use('/chat', chatRoutes);
 
-// JWT bilan websocket autentifikatsiyasi
+// JWT bilan socket autentifikatsiya
 io.use(authenticate);
 
 io.on('connection', (socket) => {
   const { userId, lessonId, token } = socket;
 
   if (!userId || !lessonId || !token) {
-    console.warn('❗ Socketga userId, lessonId yoki token biriktirilmagan');
-    socket.disconnect();
-    return;
+    console.warn('❗ Kerakli maʼlumotlar yo‘q (userId, lessonId, token)');
+    return socket.disconnect();
   }
 
-  // Dastlab supportId ni olish va socket ga saqlash
+  // Support ID ni olish
   axios.get(`${process.env.DJANGO_API_URL}/education/lessons/${lessonId}/support/`, {
     headers: { Authorization: `Bearer ${token}` }
-  }).then(response => {
+  }).then(async response => {
     const supportId = response.data?.id;
-
-    if (!supportId) {
-      console.warn(`❗ Lesson ${lessonId} uchun support topilmadi`);
-      socket.disconnect();
-      return;
-    }
+    if (!supportId) return socket.disconnect();
 
     socket.supportId = supportId;
 
-    // Har bir user o'zining shaxsiy roomiga qo'shiladi
+    // Join to user's room
     socket.join(String(userId));
-    console.log(`User ${userId} joined personal room`);
+    console.log(`✅ User ${userId} joined room`);
 
-    // Foydalanuvchi private chat xonasiga qo‘shilish uchun event
-    socket.on('join_private_chat', ({ room }) => {
-      const expectedRoom = `chat_${Math.min(socket.userId, socket.supportId)}_${Math.max(socket.userId, socket.supportId)}`;
+    const room = `chat_${Math.min(userId, supportId)}_${Math.max(userId, supportId)}`;
 
-      if (room !== expectedRoom) {
-        console.warn(`❌ User ${socket.userId} tried to join unauthorized room: ${room}`);
-        return;
+    socket.on('join_private_chat', ({ room: joinRoom }) => {
+      if (joinRoom === room) {
+        socket.join(joinRoom);
+        console.log(`🟢 Joined private room: ${joinRoom}`);
+      } else {
+        console.warn(`❌ Unauthorized room join attempt: ${joinRoom}`);
       }
-
-      socket.join(room);
-      console.log(`✅ User ${socket.userId} joined private room: ${room}`);
     });
 
-    // Xabar yuborish
-    socket.on('send_message', async (data) => {
-      try {
-        const { content } = data;
+    socket.on('send_message', async ({ content }) => {
+      if (!content?.trim()) return;
 
-        if (!content || !content.trim()) {
-          console.warn('❗ Bo‘sh xabar yuborilmoqda');
-          return;
-        }
+      const message = new Message({
+        lessonId,
+        senderId: userId,
+        receiverId: supportId,
+        content,
+      });
 
-        const newMessage = new Message({
-          lessonId,
-          senderId: userId,
-          receiverId: supportId,
-          content,
-        });
+      await message.save();
 
-        await newMessage.save();
-        
+      const payload = {
+        lessonId,
+        senderId: userId,
+        receiverId: supportId,
+        content: message.content,
+        timestamp: message.timestamp,
+      };
 
-        const messagePayload = {
-          content: newMessage.content,
-          senderId: userId,
-          receiverId: supportId,
-          timestamp: newMessage.timestamp,
-          lessonId,
-        };
-
-        // Support-student uchun private room
-        const privateRoom = `chat_${Math.min(userId, supportId)}_${Math.max(userId, supportId)}`;
-
-        io.to(privateRoom).emit('new_message', messagePayload);
-        console.log(`✅ User ${userId} sent message to room ${privateRoom}:`, content);
-      } catch (err) {
-        console.error('❌ Message save error:', err.response?.data || err.message || err);
-      }
+      io.to(room).emit('new_message', payload);
+      console.log(`✉️  Message sent to room ${room}:`, content);
     });
 
     socket.on('disconnect', () => {
-      console.log('Socket disconnected:', socket.id);
+      console.log('🔌 Disconnected:', socket.id);
     });
-
   }).catch(err => {
-    console.error('❌ Support ID olishda xato:', err.response?.data || err.message || err);
+    console.error('❌ Support ID olishda xato:', err.message);
     socket.disconnect();
   });
-
 });
 
 const PORT = process.env.PORT || 5000;

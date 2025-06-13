@@ -1,11 +1,11 @@
+import express from 'express';
 import axios from 'axios';
 import authenticateToken from '../middleware/authenticateToken.js';
 import Message from '../models/Message.js';
-import express from 'express';
+
 const router = express.Router();
 
-export default router;
-
+// GET /chat/messages?lesson=123
 router.get('/messages', authenticateToken, async (req, res) => {
   const lessonId = req.query.lesson;
   const userId = req.userId;
@@ -22,9 +22,7 @@ router.get('/messages', authenticateToken, async (req, res) => {
     );
 
     const supportId = response.data?.id;
-    if (!supportId) {
-      return res.status(404).json({ error: 'Support topilmadi' });
-    }
+    if (!supportId) return res.status(404).json({ error: 'Support topilmadi' });
 
     const messages = await Message.find({
       lessonId,
@@ -40,3 +38,5 @@ router.get('/messages', authenticateToken, async (req, res) => {
     res.status(500).json({ error: 'Server xatosi' });
   }
 });
+
+export default router;
