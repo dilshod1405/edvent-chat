@@ -1,21 +1,21 @@
+// index.js
 import express from 'express';
 import http from 'http';
-import { Server } from 'socket.io';
 import cors from 'cors';
+import { Server } from 'socket.io';
 import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import authenticate from './middleware/auth.js';
+import routes from './routes/index.js';
 import Message from './models/Message.js';
-import chatRoutes from './routes/chat.js';
 import axios from 'axios';
 
 dotenv.config();
 connectDB();
 
-const app = express();
+const app    = express();
 const server = http.createServer(app);
-
-const io = new Server(server, {
+const io     = new Server(server, {
   cors: {
     origin: [
       "http://localhost:3000",
@@ -29,72 +29,59 @@ const io = new Server(server, {
 
 app.use(cors());
 app.use(express.json());
-app.use('/chat', chatRoutes);
+app.use('/', routes);
 
-// JWT bilan socket autentifikatsiya
+// Socket auth & connection
 io.use(authenticate);
-
-io.on('connection', (socket) => {
+io.on('connection', socket => {
   const { userId, lessonId, token } = socket;
 
-  if (!userId || !lessonId || !token) {
-    console.warn('❗ Kerakli maʼlumotlar yo‘q (userId, lessonId, token)');
-    return socket.disconnect();
-  }
-
-  // Support ID ni olish
+  // 1) Django’dan supportId olish
   axios.get(`${process.env.DJANGO_API_URL}/education/lessons/${lessonId}/support/`, {
     headers: { Authorization: `Bearer ${token}` }
-  }).then(async response => {
-    const supportId = response.data?.id;
-    if (!supportId) return socket.disconnect();
+  }).then(({ data }) => {
+    const supportId = data?.id;
+    if (!supportId) {
+      console.warn('❗ Support topilmadi, disconnect');
+      return socket.disconnect();
+    }
 
-    socket.supportId = supportId;
+    // 2) Har bir student uchun **o‘z** private room nomi
+    const room = `chat_l${lessonId}_u${userId}`;
 
-    // Join to user's room
-    socket.join(String(userId));
-    console.log(`✅ User ${userId} joined room`);
+    // 3) Faqat shu room’ga avtomatik qo‘shish
+    socket.join(room);
+    console.log(`🔐 ${userId} joined room ${room}`);
 
-    const room = `chat_${Math.min(userId, supportId)}_${Math.max(userId, supportId)}`;
-
-    socket.on('join_private_chat', ({ room: joinRoom }) => {
-      if (joinRoom === room) {
-        socket.join(joinRoom);
-        console.log(`🟢 Joined private room: ${joinRoom}`);
-      } else {
-        console.warn(`❌ Unauthorized room join attempt: ${joinRoom}`);
-      }
-    });
-
+    // 4) Xabar qabul qilish va tarqatish
     socket.on('send_message', async ({ content }) => {
       if (!content?.trim()) return;
 
-      const message = new Message({
+      const msg = new Message({
         lessonId,
-        senderId: userId,
+        senderId:   userId,
         receiverId: supportId,
-        content,
+        content
       });
-
-      await message.save();
+      await msg.save();
 
       const payload = {
         lessonId,
-        senderId: userId,
+        senderId:   userId,
         receiverId: supportId,
-        content: message.content,
-        timestamp: message.timestamp,
+        content:    msg.content,
+        timestamp:  msg.timestamp
       };
 
       io.to(room).emit('new_message', payload);
-      console.log(`✉️  Message sent to room ${room}:`, content);
+      console.log(`✉️ [${room}] ${userId} → ${supportId}: ${content}`);
     });
 
     socket.on('disconnect', () => {
-      console.log('🔌 Disconnected:', socket.id);
+      console.log(`💔 ${userId} left room ${room}`);
     });
   }).catch(err => {
-    console.error('❌ Support ID olishda xato:', err.message);
+    console.error('❌ Support fetch error:', err.message);
     socket.disconnect();
   });
 });
